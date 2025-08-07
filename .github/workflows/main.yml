@@ -1,37 +1,45 @@
-name: Build Android APK
+name: Build Kivy APK
 
 on:
   push:
-    branches:
-      - main  # Or your main branch name
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Android environment
-        uses: androidactions/setup-android@v2
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          sdk-version: 33 # Or your desired SDK version
-          android-ndk-version: r23b # Or your desired NDK version
+          python-version: 3.10
 
-      - name: Install buildozer
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install python3-pip
-          pip3 install buildozer
+          sudo apt update
+          sudo apt install -y python3-pip git zip unzip openjdk-17-jdk
+          pip install --upgrade pip
+          pip install buildozer Cython virtualenv
+
+      - name: Initialize buildozer.spec
+        run: |
+          cd AutoGen-Main
+          if [ ! -f buildozer.spec ]; then
+            buildozer init
+          fi
 
       - name: Build APK
         run: |
-          buildozer android debug deploy run
-        env:
-          ANDROID_HOME: ${{ steps.setup-android.outputs.android-home }}
+          cd AutoGen-Main
+          buildozer android debug
 
-      - name: Upload APK (Optional)
-        uses: actions/upload-artifact@v3
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: bin/app-debug.apk # Path to your built APK
+          name: autogen-debug-apk
+          path: AutoGen-Main/bin/*.apk
