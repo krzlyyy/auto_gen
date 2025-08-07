@@ -1,0 +1,37 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main  # Or your main branch name
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Android environment
+        uses: androidactions/setup-android@v2
+        with:
+          sdk-version: 33 # Or your desired SDK version
+          android-ndk-version: r23b # Or your desired NDK version
+
+      - name: Install buildozer
+        run: |
+          sudo apt-get update
+          sudo apt-get install python3-pip
+          pip3 install buildozer
+
+      - name: Build APK
+        run: |
+          buildozer android debug deploy run
+        env:
+          ANDROID_HOME: ${{ steps.setup-android.outputs.android-home }}
+
+      - name: Upload APK (Optional)
+        uses: actions/upload-artifact@v3
+        with:
+          name: android-apk
+          path: bin/app-debug.apk # Path to your built APK
